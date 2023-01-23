@@ -1,0 +1,22 @@
+# Default
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+# macOS
+.DS_Store
+
+# Dependencies
+node_modules
+
+# package-lock.json
+package-lock.json
+
+# Environment variables
+.env
