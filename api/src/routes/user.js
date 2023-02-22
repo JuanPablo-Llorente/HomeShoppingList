@@ -142,34 +142,45 @@ router.put("/user/:id", async (req, res, next) => {
 });
 
 
-// router.delete("/user/:id", async (req, res, next) => {
-//     const {id} = req.params;
-//     const {userId} = req.body;
+router.delete("/user/:id", async (req, res, next) => {
+    const {id} = req.params;
+    const {authorization} = req.headers;
     
-//     try
-//     {
-//         const foundUser = await User.findByPk(id).catch(e => console.error(e));
-//         const deleteVerify = foundUser && foundUser.dataValues.id == userId ? true : false;
-        
-//         if(deleteVerify)
-//         {
-//             await User.destroy({
-//                 where: {id},
-//             });
+    try
+    {
+        if(authorization)
+        {
+            const token = authorization.split(" ").pop();
+            const decodedToken = await verifyToken(token);
+            const userId = decodedToken !== undefined ? decodedToken.id : null;
             
-//             res.send("User deleted.");
-//         }
-//         else
-//         {
-//             res.status(404).json({error: "Cannot delete this user."});
-//         };
-//     }
-//     catch(error)
-//     {
-//         console.error(error);
-//         next();
-//     };
-// });
+            const foundUser = await User.findByPk(id).catch(e => console.error(e));
+            const deleteVerify = foundUser && foundUser.dataValues.id == userId ? true : false;
+                
+            if(deleteVerify)
+            {
+                await User.destroy({
+                    where: {id},
+                });
+                
+                res.send("User deleted.");
+            }
+            else
+            {
+                res.status(404).json({error: "Cannot delete this user."});
+            };
+        }
+        else
+        {
+            res.status(404).json({error: "No authorization."});
+        };
+    }
+    catch(error)
+    {
+        console.error(error);
+        next();
+    };
+});
 
 
 module.exports = router;

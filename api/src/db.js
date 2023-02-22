@@ -28,8 +28,8 @@ models.forEach(model => model(sequelize));
 const {User, FamilyGroup, ShoppingList} = sequelize.models;
 
 // User and FamilyGroup
-User.hasMany(FamilyGroup);
-FamilyGroup.belongsTo(User);
+User.belongsToMany(FamilyGroup, {through: "User/FamilyGroup"});
+FamilyGroup.belongsToMany(User, {through: "User/FamilyGroup"});
 
 // FamilyGroup and ShoppingList
 FamilyGroup.hasMany(ShoppingList);
