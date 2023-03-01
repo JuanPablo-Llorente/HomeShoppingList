@@ -21,13 +21,17 @@ router.post("/invitationlink/:id", async (req, res, next) => {
                 
                 const invitationLink = `/invitationlink/${token}`;
                 
-                res.send({invitationLink});
+                res.status(200).json({msg: "Link created.", content: invitationLink});
             }
             else
             {
                 res.status(404).json({error: "Invalid group id."});
             };
         }
+        else
+        {
+            res.status(404).json({error: "Id not provided."});
+        };
     }
     catch(error)
     {
@@ -70,7 +74,7 @@ router.put("/invitationlink/:groupToken", async (req, res, next) => {
                     {
                         foundFamilyGroup.addUser(userId);
                         
-                        res.send("New user added.");
+                        res.status(200).json({msg: "New user added"});
                     }
                     else
                     {

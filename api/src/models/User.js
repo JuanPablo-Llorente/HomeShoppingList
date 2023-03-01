@@ -1,20 +1,17 @@
 // Dependencies
 const {DataTypes} = require("sequelize");
 
-const avatars = ["pablo", "eva", "sabrina", "juan"];
-const avatar = avatars[Math.floor(Math.random() * avatars.length)];
-
 module.exports = sequelize =>
 {
     sequelize.define("User",
     {
-        // id:
-        // {
-        //     type: DataTypes.UUID,
-        //     defaultValue: DataTypes.UUIDV4,
-        //     allowNull: false,
-        //     primaryKey: true,
-        // },
+        id:
+        {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            allowNull: false,
+            primaryKey: true,
+        },
         name:
         {
             type: DataTypes.STRING,
@@ -34,6 +31,7 @@ module.exports = sequelize =>
         {
             type: DataTypes.STRING,
             allowNull: false,
+            unique: true,
         },
         password:
         {
@@ -44,7 +42,7 @@ module.exports = sequelize =>
         {
             type: DataTypes.TEXT,
             allowNull: false,
-            defaultValue: `https://unavatar.io/${avatar}`,
+            defaultValue: "https://i.pinimg.com/564x/20/0d/72/200d72a18492cf3d7adac8a914ef3520.jpg",
         },
         familyRole:
         {

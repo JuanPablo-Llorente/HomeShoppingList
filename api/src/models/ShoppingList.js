@@ -12,10 +12,21 @@ module.exports = sequelize =>
             allowNull: false,
             primaryKey: true,
         },
+        title:
+        {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
         content:
         {
-            type: DataTypes.JSON,
+            type: DataTypes.ARRAY(DataTypes.TEXT),
             allowNull: false,
+        },
+        parentsOnly:
+        {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
         },
     },
     {

@@ -7,28 +7,49 @@ const {verifyToken} = require("../controllers/tokens");
 const {API_KEY} = process.env;
 
 
-router.get("/familygroup", async (req, res, next) => {
+// Get group lists
+router.get("/familygroup/:id", async (req, res, next) => {
+    const {id} = req.params;
+    const {authorization} = req.headers;
     const {apiKey} = req.query;
     const validApiKey = apiKey === API_KEY ? true : false;
     
     try
     {
-        if(validApiKey)
+        if(validApiKey && authorization)
         {
-            const allFamilyGroups = await FamilyGroup.findAll();
+            const token = authorization.split(" ").pop();
+            const decodedToken = await verifyToken(token);
+            const userId = decodedToken !== undefined ? decodedToken.id : null;
             
-            if(allFamilyGroups.length)
+            if(userId)
             {
-                res.send(allFamilyGroups);
+                const foundFamilyGroup = await FamilyGroup.findByPk(id, {
+                    include: [
+                        {
+                            model: ShoppingList,
+                        }
+                    ],
+                })
+                .catch(e => console.error(e));
+                
+                if(foundFamilyGroup)
+                {
+                    res.status(200).json({msg: "Group found.", content: foundFamilyGroup});
+                }
+                else
+                {
+                    res.status(404).json({msg: "Group not found."});
+                };
             }
             else
             {
-                res.status(404).json({error: "No family groups created."});
+                res.status(404).json({msg: "Invalid token."});
             };
         }
         else
         {
-            res.status(404).json({error: "No authorization."});
+            res.status(404).json({msg: "No authorization"});
         };
     }
     catch(error)
@@ -39,11 +60,12 @@ router.get("/familygroup", async (req, res, next) => {
 });
 
 
-router.get("/familygroup/:id", async (req, res, next) => {
+// Get group users
+router.get("/familygroup/:id/users", async (req, res, next) => {
     const {id} = req.params;
+    const {authorization} = req.headers;
     const {apiKey} = req.query;
     const validApiKey = apiKey === API_KEY ? true : false;
-    const {authorization} = req.headers;
     
     try
     {
@@ -59,31 +81,28 @@ router.get("/familygroup/:id", async (req, res, next) => {
                     include: [
                         {
                             model: User,
-                        },
-                        {
-                            model: ShoppingList,
-                        },
+                        }
                     ],
                 })
                 .catch(e => console.error(e));
                 
                 if(foundFamilyGroup)
                 {
-                    res.send(foundFamilyGroup);
+                    res.status(200).json({msg: "Group found.", content: foundFamilyGroup});
                 }
                 else
                 {
-                    res.status(404).json({error: "Group not found."});
+                    res.status(404).json({msg: "Group not found."});
                 };
             }
             else
             {
-                res.status(404).json({error: "Invalid token."});
+                res.status(404).json({msg: "Invalid token."});
             };
         }
         else
         {
-            res.status(404).json({error: "No authorization"});
+            res.status(404).json({msg: "No authorization"});
         };
     }
     catch(error)
@@ -94,6 +113,7 @@ router.get("/familygroup/:id", async (req, res, next) => {
 });
 
 
+// Create group
 router.post("/familygroup", async (req, res, next) => {
     const {name} = req.body;
     const {authorization} = req.headers;
@@ -112,13 +132,16 @@ router.post("/familygroup", async (req, res, next) => {
                 
                 newFamilyGroup.addUser(userId);
                 
-                // res.send("Group created.");
-                res.send(newFamilyGroup.dataValues.id);
+                res.status(200).json({msg: "Group created.", content: newFamilyGroup.dataValues.id});
+            }
+            else
+            {
+                res.status(404).json({msg: "Invalid token."});
             };
         }
         else
         {
-            res.status(404).json({error: "No authorization"});
+            res.status(404).json({msg: "No authorization"});
         };
     }
     catch(error)
@@ -128,6 +151,7 @@ router.post("/familygroup", async (req, res, next) => {
 });
 
 
+// Edit group
 router.put("/familygroup/:id", async (req, res, next) => {
     const {id} = req.params;
     const {name} = req.body;
@@ -158,7 +182,7 @@ router.put("/familygroup/:id", async (req, res, next) => {
                     if(familyGroupUsersIds.includes(userId))
                     {
                         const foundUser = await User.findByPk(userId).catch(e => console.error(e));
-                        const putVerify = foundUser && foundUser.dataValues.familyRole === "Father" || "Mother" ? true : false;
+                        const putVerify = foundUser && foundUser.dataValues.familyRole === "Father" | "Mother" ? true : false;
                         
                         if(putVerify)
                         {
@@ -169,32 +193,32 @@ router.put("/familygroup/:id", async (req, res, next) => {
                                 where: {id},
                             });
                             
-                            res.send("Group updated.");
+                            res.status(200).json({msg: "Group updated."});
                         }
                         else
                         {
-                            res.status(404).json({error: "Cannot update the group."});
+                            res.status(404).json({msg: "Only parents can update the group."});
                         };
                     }
                     else
                     {
-                        res.status(404).json({error: "No authorization."});
+                        res.status(404).json({msg: "No authorization."});
                     };
                     
                 }
                 else
                 {
-                    res.status(404).json({error: "Group not found."});
+                    res.status(404).json({msg: "Group not found."});
                 };
             }
             else
             {
-                res.status(404).json({error: "Invalid token."});
+                res.status(404).json({msg: "Invalid token."});
             };
         }
         else
         {
-            res.status(404).json({error: "No authorization"});
+            res.status(404).json({msg: "No authorization"});
         };
     }
     catch(error)
@@ -205,6 +229,7 @@ router.put("/familygroup/:id", async (req, res, next) => {
 });
 
 
+// Delete group
 router.delete("/familygroup/:id", async (req, res, next) => {
     const {id} = req.params;
     const {authorization} = req.headers
@@ -242,32 +267,154 @@ router.delete("/familygroup/:id", async (req, res, next) => {
                                 where: {id},
                             });
                             
-                            res.send("Group deleted.");
+                            res.status(200).json({msg: "Group deleted."});
                         }
                         else
                         {
-                            res.status(404).json({error: "Cannot delete the group."});
+                            res.status(404).json({msg: "Only parents can delete the group."});
                         };
                     }
                     else
                     {
-                        res.status(404).json({error: "No authorization."});
+                        res.status(404).json({msg: "No authorization."});
                     };
                     
                 }
                 else
                 {
-                    res.status(404).json({error: "Group not found."});
+                    res.status(404).json({msg: "Group not found."});
                 };
             }
             else
             {
-                res.status(404).json({error: "Invalid token."});
+                res.status(404).json({msg: "Invalid token."});
             };
         }
         else
         {
-            res.status(404).json({error: "No authorization."});
+            res.status(404).json({msg: "No authorization."});
+        };
+    }
+    catch(error)
+    {
+        console.error(error);
+        next();
+    };
+});
+
+
+// Remove user
+router.delete("/familygroup/:groupId/users/:id", async (req, res, next) => {
+    const {groupId, id} = req.params;
+    const {authorization} = req.headers
+    
+    try
+    {
+        if(authorization)
+        {
+            const token = authorization.split(" ").pop();
+            const decodedToken = await verifyToken(token);
+            const userId = decodedToken !== undefined ? decodedToken.id : null;
+            
+            if(userId)
+            {
+                const foundFamilyGroup = await FamilyGroup.findByPk(groupId, {
+                    include: {
+                        model: User,
+                    },
+                }).catch(e => console.error(e));
+                
+                if(foundFamilyGroup)
+                {
+                    const familyGroupUsersIds = foundFamilyGroup.dataValues.Users.map(user => {
+                        return user.dataValues.id;
+                    });
+                    
+                    if(familyGroupUsersIds.includes(userId) && familyGroupUsersIds.includes(id))
+                    {
+                        const foundUser = await User.findByPk(userId).catch(e => console.error(e));
+                        const deleteVerify = foundUser && foundUser.dataValues.familyRole === "Father" | "Mother" ? true : false;
+                        
+                        if(deleteVerify)
+                        {
+                            foundFamilyGroup.removeUser(id);
+                            
+                            res.status(200).json({msg: "User removed."});
+                        }
+                        else
+                        {
+                            res.status(404).json({msg: "Only parents can remove users."});
+                        };
+                    }
+                    else
+                    {
+                        res.status(404).json({msg: "No authorization."});
+                    };
+                    
+                }
+                else
+                {
+                    res.status(404).json({msg: "Group not found."});
+                };
+            }
+            else
+            {
+                res.status(404).json({msg: "Invalid token."});
+            };
+        }
+        else
+        {
+            res.status(404).json({msg: "No authorization."});
+        };
+    }
+    catch(error)
+    {
+        console.error(error);
+        next();
+    };
+});
+
+
+// Leave group
+router.delete("/familygroup/:id/users", async (req, res, next) => {
+    const {id} = req.params;
+    const {authorization} = req.headers
+    
+    try
+    {
+        if(authorization)
+        {
+            const token = authorization.split(" ").pop();
+            const decodedToken = await verifyToken(token);
+            const userId = decodedToken !== undefined ? decodedToken.id : null;
+            
+            if(userId)
+            {
+                const foundFamilyGroup = await FamilyGroup.findByPk(id, {
+                    include: {
+                        model: User,
+                    },
+                }).catch(e => console.error(e));
+                
+                if(foundFamilyGroup)
+                {
+                    foundFamilyGroup.removeUser(userId);
+                    
+                    res.status(200).json({msg: "Group leaved."});
+                }
+                else
+                {
+                    res.status(404).json({msg: "Group not found."});
+                };
+            }
+            else
+            {
+                res.status(404).json({msg: "Invalid token."});
+            };
+        }
+        else
+        {
+            res.status(404).json({msg: "No authorization."});
         };
     }
     catch(error)

@@ -17,19 +17,20 @@ router.get("/user", async (req, res, next) => {
         if(validApiKey)
         {
             const allUsers = await User.findAll();
+            const totalUsers = allUsers.length;
             
             if(allUsers.length)
             {
-                res.send(allUsers);
+                res.status(200).json({msg: `${totalUsers} ${totalUsers === 1 ? "user" : "users"} found.` , content: allUsers});
             }
             else
             {
-                res.status(404).json({error: "No users created."});
+                res.status(404).json({msg: "No users created."});
             };
         }
         else
         {
-            res.status(404).json({error: "No authorization."});
+            res.status(404).json({msg: "No authorization."});
         };
     }
     catch(error)
@@ -42,34 +43,46 @@ router.get("/user", async (req, res, next) => {
 
 router.get("/user/:id", async (req, res, next) => {
     const {id} = req.params;
+    const {authorization} = req.headers;
     const {apiKey} = req.query;
     const validApiKey = apiKey === API_KEY ? true : false;
     
     try
     {
-        if(validApiKey)
+        if(validApiKey && authorization)
         {
-            const foundUser = await User.findByPk(id, {
-                include: [
-                    {
-                        model: FamilyGroup,
-                    },
-                ],
-            })
-            .catch(e => console.error(e));
+            const token = authorization.split(" ").pop();
+            const decodedToken = await verifyToken(token);
+            const userId = decodedToken !== undefined ? decodedToken.id : null;
             
-            if(foundUser)
+            if(userId)
             {
-                res.send(foundUser);
+                const foundUser = await User.findByPk(id, {
+                    include: [
+                        {
+                            model: FamilyGroup,
+                        },
+                    ],
+                })
+                .catch(e => console.error(e));
+                
+                if(foundUser)
+                {
+                    res.status(200).json({msg: "User found.", content: foundUser});
+                }
+                else
+                {
+                    res.status(404).json({msg: "User not found."});
+                };
             }
             else
             {
-                res.status(404).json({error: "User not found."});
+                res.status(404).json({msg: "Invalid token."});
             };
         }
         else
         {
-            res.status(404).json({error: "No authorization"});
+            res.status(404).json({msg: "No authorization"});
         };
     }
     catch(error)
@@ -117,21 +130,21 @@ router.put("/user/:id", async (req, res, next) => {
                     
                     const token = await signToken(foundUser);
                     
-                    res.send({foundUser, token});
+                    res.status(200).json({msg: "User updated.", content:{foundUser, token}});
                 }
                 else
                 {
-                    res.status(404).json({error: "Cannot update this user."});
+                    res.status(404).json({msg: "Cannot update this user."});
                 };
             }
             else
             {
-                res.status(404).json({error: "Invalid token."});
+                res.status(404).json({msg: "Invalid token."});
             };
         }
         else
         {
-            res.status(404).json({error: "No authorization"});
+            res.status(404).json({msg: "No authorization"});
         };
     }
     catch(error)
@@ -156,23 +169,23 @@ router.delete("/user/:id", async (req, res, next) => {
             
             const foundUser = await User.findByPk(id).catch(e => console.error(e));
             const deleteVerify = foundUser && foundUser.dataValues.id == userId ? true : false;
-                
+            
             if(deleteVerify)
             {
                 await User.destroy({
                     where: {id},
                 });
                 
-                res.send("User deleted.");
+                res.status(200).json({msg: "User deleted."});
             }
             else
             {
-                res.status(404).json({error: "Cannot delete this user."});
+                res.status(404).json({msg: "Cannot delete this user."});
             };
         }
         else
         {
-            res.status(404).json({error: "No authorization."});
+            res.status(404).json({msg: "No authorization."});
         };
     }
     catch(error)
