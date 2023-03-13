@@ -46,7 +46,7 @@ module.exports = sequelize =>
         },
         familyRole:
         {
-            type: DataTypes.ENUM("Father", "Mother", "Son"),
+            type: DataTypes.ENUM("Father", "Mother", "Son", "Daughter"),
             allowNull: false,
         },
         userRole:

@@ -30,10 +30,10 @@ router.post("/register", async (req, res, next) => {
                 const hashedPassword = await encrypt(password);
                 
                 await User.create({
-                    name,
-                    lastName,
-                    userName,
-                    email,
+                    name: name.trimStart().trimEnd(),
+                    lastName: lastName.trimStart().trimEnd(),
+                    userName: userName.trimStart().trimEnd(),
+                    email: email.trimStart().trimEnd(),
                     password: hashedPassword,
                     profilePhoto,
                     familyRole,
