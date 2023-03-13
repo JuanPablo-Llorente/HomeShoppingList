@@ -1,6 +1,7 @@
 {
   "expo": {
-    "name": "HomeShoppingList",
+    "name": "Home Shopping List",
+    "description": "An app to have a common shopping list with your family.",
     "slug": "HomeShoppingList",
     "version": "1.0.0",
     "orientation": "portrait",
